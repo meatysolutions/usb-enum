@@ -1,0 +1,19 @@
+[package]
+authors = ["Tim Fish <tim@timfish.uk>"]
+edition = "2018"
+name = "usb-enum"
+version = "0.1.0"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+napi = {version = "1", features = ["napi4"]}
+napi-derive = "1"
+usb_enumeration = "0.1"
+
+[build-dependencies]
+napi-build = "1.0.0"
+
+[profile.release]
+codegen-units = 1

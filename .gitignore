@@ -1,0 +1,8 @@
+*.log
+yarn-debug.log*
+yarn-error.log*
+node_modules/
+*.tsbuildinfo
+/target
+Cargo.lock
+*.node
