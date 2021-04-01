@@ -1,8 +1,10 @@
+cargo-features = ["strip"]
+
 [package]
 authors = ["Tim Fish <tim@timfish.uk>"]
 edition = "2018"
 name = "usb-enum"
-version = "0.1.0"
+version = "0.0.1"
 
 [lib]
 crate-type = ["cdylib"]
@@ -17,3 +19,5 @@ napi-build = "1.0.0"
 
 [profile.release]
 codegen-units = 1
+lto = true
+strip = 'symbols'

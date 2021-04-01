@@ -9,20 +9,14 @@ if (!process) {
 const binding = loadBinding(__dirname, 'usb-enum', 'usb-enum')
 
 module.exports = {
-  list: (vendor_id, product_id) => {
-    return binding.list(vendor_id, product_id)
-  },
+  list: binding.list,
   watch: (connected, disconnected, vendor_id, product_id) => {
     binding.watch(
       (e, device) => {
-        if (!e) {
-          connected(device)
-        }
+        if (!e) connected(device)
       },
       (e, device) => {
-        if (!e) {
-          disconnected(device)
-        }
+        if (!e) disconnected(device)
       },
       vendor_id,
       product_id,

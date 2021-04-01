@@ -1,5 +1,5 @@
 interface UsbDevice {
-  is: string
+  id: string
   vendor_id: number
   product_id: number
   description?: string

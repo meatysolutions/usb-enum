@@ -1,15 +1,15 @@
 {
-  "name": "usb-enum-win32-x64-msvc",
+  "name": "usb-enum-win32-ia32-msvc",
   "version": "0.0.1",
   "os": [
     "win32"
   ],
   "cpu": [
-    "x64"
+    "ia32"
   ],
-  "main": "usb-enum.win32-x64-msvc.node",
+  "main": "usb-enum.win32-ia32-msvc.node",
   "files": [
-    "usb-enum.win32-x64-msvc.node"
+    "usb-enum.win32-ia32-msvc.node"
   ],
   "description": "Native node library to list USB devices and notify on connect and disconnect",
   "keywords": [
