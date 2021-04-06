@@ -14,7 +14,9 @@
   "types": "index.d.ts",
   "files": [
     "index.d.ts",
-    "index.js"
+    "index.js",
+    "install.js",
+    "artifacts/*"
   ],
   "napi": {
     "name": "usb-enum",
@@ -36,15 +38,15 @@
     "access": "public"
   },
   "scripts": {
-    "artifacts": "napi artifacts",
+    "install": "node install.js",
     "build": "napi build --platform --release",
+    "postbuild": "node install.js",
     "build:debug": "napi build --platform",
+    "postbuild:debug": "node install.js",
     "format": "run-p format:md format:yaml format:source format:rs",
     "format:md": "prettier --parser markdown --write './**/*.md'",
     "format:rs": "cargo fmt",
-    "format:source": "prettier --config ./package.json --write './**/*.{js,ts}'",
-    "prepublishOnly": "napi prepublish -t npm",
-    "version": "napi version"
+    "format:source": "prettier --config ./package.json --write './**/*.{js,ts}'"
   },
   "devDependencies": {
     "@napi-rs/cli": "^1.0.3",
@@ -52,11 +54,10 @@
     "prettier": "^2.2.1"
   },
   "dependencies": {
-    "@node-rs/helper": "^1.1.0"
+    "@napi-rs/triples": "^1.0.2"
   },
   "prettier": {
-    "printWidth": 120,
-    "semi": false,
+    "printWidth": 100,
     "trailingComma": "all",
     "singleQuote": true,
     "arrowParens": "always",
