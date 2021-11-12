@@ -1,6 +1,6 @@
 {
   "name": "usb-enum",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Native node library to list USB devices and notify on connect and disconnect",
   "main": "index.js",
   "repository": "git@github.com:meatysolutions/usb-enum.git",
@@ -15,8 +15,7 @@
   "files": [
     "index.d.ts",
     "index.js",
-    "install.js",
-    "artifacts/*"
+    "*.node"
   ],
   "napi": {
     "name": "usb-enum",
@@ -38,23 +37,16 @@
     "access": "public"
   },
   "scripts": {
-    "install": "node install.js",
     "build": "napi build --platform --release",
-    "postbuild": "node install.js",
-    "build:debug": "napi build --platform",
-    "postbuild:debug": "node install.js",
-    "format": "run-p format:md format:yaml format:source format:rs",
-    "format:md": "prettier --parser markdown --write './**/*.md'",
-    "format:rs": "cargo fmt",
-    "format:source": "prettier --config ./package.json --write './**/*.{js,ts}'"
+    "build:debug": "napi build --platform"
   },
   "devDependencies": {
-    "@napi-rs/cli": "^1.0.3",
+    "@napi-rs/cli": "alpha",
     "npm-run-all": "^4.1.5",
-    "prettier": "^2.2.1"
+    "prettier": "^2.4.1"
   },
   "dependencies": {
-    "@napi-rs/triples": "^1.0.2"
+    "@napi-rs/triples": "^1.0.3"
   },
   "prettier": {
     "printWidth": 100,

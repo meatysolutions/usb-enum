@@ -1,14 +1,11 @@
 interface UsbDevice {
   id: string
-  vendor_id: number
-  product_id: number
-  description?: string
+  vendorId: number
+  productId: number
+  description: string | null
 }
-
-export const list: (vendor_id?: number, product_id?: number) => number
-export const watch: (
-  connected: (device: UsbDevice) => void,
-  disconnected: (device: UsbDevice) => void,
-  vendor_id?: number,
-  product_id?: number,
-) => Promise<number>
+export function list(vendorId: number | null, productId: number | null): Promise<Array<UsbDevice>>
+export class Watch {
+  
+  constructor(connected: (...args: any[]) => any | null, disconnected: (...args: any[]) => any | null, vendorId: number | null, productId: number | null)
+}
