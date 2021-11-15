@@ -1,8 +1,8 @@
-use napi::{bindgen_prelude::*, threadsafe_function::*};
+use napi::{bindgen_prelude::*, threadsafe_function::*, JsFunction};
 use napi_derive::napi;
 use serde::{Deserialize, Serialize};
 use std::{
-    sync::Arc,
+    sync::{Arc, RwLock},
     thread::{self, JoinHandle},
 };
 use usb_enumeration::{enumerate, Observer, Subscription, UsbDevice as InternalUsbDevice};
@@ -54,78 +54,114 @@ pub fn list(vendor_id: Option<u32>, product_id: Option<u32>) -> AsyncTask<List> 
     })
 }
 
+#[derive(PartialEq)]
+enum Event {
+    Connect,
+    Disconnect,
+}
+
+struct WatchSubscription {
+    event: Event,
+    vendor_id: Option<u16>,
+    product_id: Option<u16>,
+    func: ThreadsafeFunction<UsbDevice>,
+}
+
+impl WatchSubscription {
+    pub fn parse(method: String, callback: JsFunction) -> Result<Self> {
+        let func =
+            callback.create_threadsafe_function(0, |ctx: ThreadSafeCallContext<UsbDevice>| {
+                ctx.env.to_js_value(&ctx.value).map(|v| vec![v])
+            })?;
+
+        todo!()
+    }
+
+    pub fn matches(&self, event: &Event, device: &InternalUsbDevice) -> bool {
+        if &self.event != event {
+            return false;
+        }
+
+        if let Some(vendor_id) = self.vendor_id {
+            if vendor_id != device.vendor_id {
+                return false;
+            }
+        }
+
+        if let Some(product_id) = self.product_id {
+            if product_id != device.product_id {
+                return false;
+            }
+        }
+
+        true
+    }
+}
+
 #[napi]
 #[derive(Clone)]
 pub struct Watch {
-    thread_handle: Arc<JoinHandle<()>>,
+    thread_handle: Option<Arc<JoinHandle<()>>>,
     subscription: Subscription,
+    listeners: Arc<RwLock<Vec<WatchSubscription>>>,
 }
 
 #[napi]
 impl Watch {
     #[napi(constructor)]
-    pub fn new(
-        connected: Option<JsFunction>,
-        disconnected: Option<JsFunction>,
-        vendor_id: Option<u32>,
-        product_id: Option<u32>,
-    ) -> Result<Self> {
-        let connected = connected
-            .map(|f| {
-                f.create_threadsafe_function(0, |ctx: ThreadSafeCallContext<UsbDevice>| {
-                    ctx.env.to_js_value(&ctx.value).map(|v| vec![v])
-                })
-            })
-            .transpose()?;
-
-        let disconnected = disconnected
-            .map(|f| {
-                f.create_threadsafe_function(0, |ctx: ThreadSafeCallContext<UsbDevice>| {
-                    ctx.env.to_js_value(&ctx.value).map(|v| vec![v])
-                })
-            })
-            .transpose()?;
-
-        let mut observer = Observer::new();
-        if let Some(vendor_id) = vendor_id {
-            observer = observer.with_vendor_id(vendor_id as u16);
-        }
-        if let Some(product_id) = product_id {
-            observer = observer.with_product_id(product_id as u16);
-        }
+    pub fn new() -> Result<Self> {
+        let observer = Observer::new().with_poll_interval(5);
         let subscription = observer.subscribe();
 
+        let mut watcher = Watch {
+            thread_handle: None,
+            subscription,
+            listeners: Default::default(),
+        };
+
         let thread_handle = thread::spawn({
-            let subscription = subscription.clone();
+            let this = watcher.clone();
 
             move || loop {
-                for event in subscription.rx_event.iter() {
+                for event in this.subscription.rx_event.iter() {
                     match event {
-                        usb_enumeration::Event::Initial(_) => {}
                         usb_enumeration::Event::Connect(device) => {
-                            if let Some(connected) = &connected {
-                                connected.call(
-                                    Ok(device.into()),
-                                    ThreadsafeFunctionCallMode::NonBlocking,
-                                );
-                            }
+                            this.dispatch(Event::Connect, device);
                         }
                         usb_enumeration::Event::Disconnect(device) => {
-                            if let Some(disconnected) = &disconnected {
-                                disconnected.call(
-                                    Ok(device.into()),
-                                    ThreadsafeFunctionCallMode::NonBlocking,
-                                );
-                            }
+                            this.dispatch(Event::Disconnect, device);
                         }
+                        _ => {}
                     }
                 }
             }
         });
 
-        Ok(Watch {
-            thread_handle: Arc::new(thread_handle),
-            subscription,
-        })
+        watcher.thread_handle = Some(Arc::new(thread_handle));
+
+        Ok(watcher)
+    }
+
+    #[napi]
+    pub fn on(&self, method: String, callback: JsFunction) -> Result<()> {
+        self.listeners
+            .write()
+            .unwrap()
+            .push(WatchSubscription::parse(method, callback)?);
+
+        Ok(())
+    }
+
+    fn dispatch(&self, event: Event, device: InternalUsbDevice) {
+        let listeners = self.listeners.read().unwrap();
+
+        for listener in listeners.iter() {
+            if listener.matches(&event, &device) {
+                listener.func.call(
+                    Ok(device.clone().into()),
+                    ThreadsafeFunctionCallMode::NonBlocking,
+                );
+            }
+        }
     }
 }
